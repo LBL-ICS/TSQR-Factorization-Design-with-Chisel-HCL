@@ -13,6 +13,7 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
   var final_Trailing = Array.ofDim[Double](m)
   var tk = 0.0
   var kr, jr= 0
+
   // all labels with TEST_MATRIX have nothing to do with the algorithm and should be ignored, they are only meant for testing
 
   var d1, d2, d3, d4, d5 = 0.0
@@ -24,7 +25,9 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
     }
   }
   myMatrix(1)(1) = 4
-  //myMatrix(2)(2) = 7
+  myMatrix(2)(2) = 7
+  myMatrix(3)(3) = 9
+  myMatrix(4)(4) = 8
   //myMatrix(0)(0) = 5/2
   //myMatrix(0)(1) = -1
   //myMatrix(1)(1) = 5
@@ -33,20 +36,20 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
   //myMatrix(1)(0) = -1/2
 
 
-
-  //for (a <- 0 until m) {
-   // for (b <- 0 until n) {
-    //  print(myMatrix(a)(b))
-   // }
-   // println("")
-  //}
-
+/*
+  for (a <- 0 until m) {
+   for (b <- 0 until n) {
+     print(myMatrix(a)(b) + " ")
+    }
+    println(" ")
+  }
+*/
   for (k <- 1 until n) {
     //hqr1 get the next section x
     kr = k - 1
     for (b <- 0 until m) {
       holder(b) = myMatrix(b)(kr)
-      //println(holder(b))
+      //(holder(b))
     }
     b = 0;
     //hqr2 ddot product
@@ -79,12 +82,15 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
         d3 = reflector(b) * reflector(b) + d3
       }
     //}
-    //print(d3)
 
     d = 0
     //hqr7
-    tk = -2 / d3
-
+    if( d3 == 0){
+      tk = 0
+    }
+    else {
+      tk = -2 / d3
+    }
     for (j <- k until n + 1 ) {
       jr = j - 1
       //hqr8
@@ -121,11 +127,14 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
       d4 = 0
     }
     d1 = 0
+
+    println("________________________________________________")
   }
 
   for (a <- 0 until m) {
    for (b <- 0 until n) {
-    print(myMatrix(a)(b) + " ")
+     print(BigDecimal(myMatrix(a)(b)).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble + " ")
+    //print(myMatrix(a)(b) + " ")
    }
    println("")
   }
@@ -133,6 +142,6 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
 }
 object Demo {
   def main(args: Array[String]) {
-    val pt = new GoldenModel_QR_HouseHolder(7, 2);
+    val pt = new GoldenModel_QR_HouseHolder(5, 5);
   }
 }
