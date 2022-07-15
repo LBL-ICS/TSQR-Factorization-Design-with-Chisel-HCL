@@ -11,9 +11,8 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
   var reflector = Array.ofDim[Double](m)
   var trailing = Array.ofDim[Double](m)
   var final_Trailing = Array.ofDim[Double](m)
-  var TEST_MATRIX = Array.ofDim[Double](m)
   var tk = 0.0
-  var kr,jr = 0
+  var kr, jr= 0
   // all labels with TEST_MATRIX have nothing to do with the algorithm and should be ignored, they are only meant for testing
 
   var d1, d2, d3, d4, d5 = 0.0
@@ -25,18 +24,14 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
     }
   }
   myMatrix(1)(1) = 4
-  myMatrix(2)(2) = 7
-  TEST_MATRIX(0) = 3
-  TEST_MATRIX(1) = 5
-  TEST_MATRIX(2) = 6
+  //myMatrix(2)(2) = 7
+  //myMatrix(0)(0) = 5/2
+  //myMatrix(0)(1) = -1
+  //myMatrix(1)(1) = 5
+  //myMatrix(2)(1) = -1
+  //myMatrix(2)(0) = -1/2
+  //myMatrix(1)(0) = -1/2
 
-
-  //for (d <- 1 until m) {
-    //for (b <- 1 until m) {
-      //d1 = TEST_MATRIX(d) * TEST_MATRIX(b) + d1
-    //}
-  //}
-//print(d1)
 
 
   //for (a <- 0 until m) {
@@ -46,7 +41,7 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
    // println("")
   //}
 
-  for (k <- 1 until 2) {
+  for (k <- 1 until n) {
     //hqr1 get the next section x
     kr = k - 1
     for (b <- 0 until m) {
@@ -55,76 +50,89 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
     }
     b = 0;
     //hqr2 ddot product
-    for (d <- kr until m) {
+
+    //for (d <- kr until m) {
       for (b <- kr until m) {
-        d1 = holder(d) * holder(b) + d1
-
+        d1 = holder(b) * holder(b) + d1
+        //println(holder(b))
       }
-    }
+   // }
     d = 0
-
+    //print(d1 + " ")
     //hqr3
     d2 = sqrt(d1)
-
+    //print(d2 + " ")
     //hqr4
     holder.copyToArray(reflector)
     //hqr5
-    if (holder(0) < 0) {
-      reflector(0) = holder(0) + -d2
+    if (holder(kr) < 0) {
+      reflector(kr) = holder(kr) + -d2
     }
     else {
-      reflector(0) = holder(0) + d2
+      reflector(kr) = holder(kr) + d2
     }
+    //print(reflector(0))
+
     //hqr6
-    for (d <- kr until m) {
+    //for (d <- kr until m) {
       for (b <- kr until m) {
-        d3 = reflector(d) * reflector(b) + d3
+        d3 = reflector(b) * reflector(b) + d3
       }
-    }
+    //}
+    //print(d3)
+
     d = 0
     //hqr7
     tk = -2 / d3
 
-    for (j <- k until n + 1) {
+    for (j <- k until n + 1 ) {
       jr = j - 1
       //hqr8
       for (b <- 0 until m) {
         trailing(b) = myMatrix(b)(jr)
-        //print(trailing(b))
+        //print(trailing(b) + " ")
       }
 
 
       //hqr9
-      for (d <- jr until m) {
-        for (b <- jr until m) {
+      //for (d <- jr until m) {
+        for (b <- kr until m) {
           //yT times x
-          d4 = trailing(d) * reflector(b) + d4
+          d4 = trailing(b) * reflector(b) + d4
+          //print(reflector(b) + " ")
         }
-      }
+      //}
       d = 0
       //print(d4)
       //hqr10
       d5 = tk * d4
       //hqr11
-      for (b <- jr until m) {
-        final_Trailing(b) = d5 * reflector(b) + trailing(b)
-      }
-
-      //hqr12
-      for (b <- jr until m) {
+      for (b <- kr until m) {
         final_Trailing(b) = d5 * reflector(b) + trailing(b)
         //print(final_Trailing(b) + " ")
       }
-
-
-      for (b <- jr until m) {
+      //hqr12
+      for (b <- kr until m) {
         myMatrix(b)(jr) = final_Trailing(b)
       }
+
+    //reset all hold values
+    d3 = 0
+      d4 = 0
     }
+    d1 = 0
   }
+
+  for (a <- 0 until m) {
+   for (b <- 0 until n) {
+    print(myMatrix(a)(b) + " ")
+   }
+   println("")
+  }
+
 }
 object Demo {
   def main(args: Array[String]) {
-    val pt = new GoldenModel_QR_HouseHolder(3, 3);
+    val pt = new GoldenModel_QR_HouseHolder(7, 2);
   }
 }
