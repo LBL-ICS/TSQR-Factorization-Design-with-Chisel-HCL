@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/GoldenModel.iml" filepath="$PROJECT_DIR$/.idea/modules/GoldenModel.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/GoldenModel-build.iml" filepath="$PROJECT_DIR$/.idea/modules/GoldenModel-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ChiselParameterizedDesigns.iml" filepath="$PROJECT_DIR$/.idea/modules/ChiselParameterizedDesigns.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ChiselParameterizedDesigns-build.iml" filepath="$PROJECT_DIR$/.idea/modules/ChiselParameterizedDesigns-build.iml" />
     </modules>
   </component>
 </project>

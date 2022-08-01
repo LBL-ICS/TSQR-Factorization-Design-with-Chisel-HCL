@@ -1,3 +1,6 @@
+import FloatingPointDesigns.FPArithmetic.FP_multiplier
+import chisel3.Module
+
 import scala.math.sqrt
 
 class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
@@ -14,6 +17,7 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
   var tk = 0.0
   var kr, jr= 0
 
+
   // all labels with TEST_MATRIX have nothing to do with the algorithm and should be ignored, they are only meant for testing
 
   var d1, d2, d3, d4, d5 = 0.0
@@ -26,24 +30,17 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
   }
   myMatrix(1)(1) = 4
   myMatrix(2)(2) = 7
-  myMatrix(3)(3) = 9
-  myMatrix(4)(4) = 8
-  //myMatrix(0)(0) = 5/2
-  //myMatrix(0)(1) = -1
-  //myMatrix(1)(1) = 5
-  //myMatrix(2)(1) = -1
-  //myMatrix(2)(0) = -1/2
-  //myMatrix(1)(0) = -1/2
 
 
-/*
+
+
   for (a <- 0 until m) {
    for (b <- 0 until n) {
      print(myMatrix(a)(b) + " ")
     }
     println(" ")
   }
-*/
+  println("________________________________________________")
   for (k <- 1 until n) {
     //hqr1 get the next section x
     kr = k - 1
@@ -125,23 +122,27 @@ class GoldenModel_QR_HouseHolder(row: Int, col: Int) {
     //reset all hold values
     d3 = 0
       d4 = 0
+
+
     }
     d1 = 0
+    for (a <- 0 until m) {
+      for (b <- 0 until n) {
+        print(BigDecimal(myMatrix(a)(b)).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble + " ")
+      }
+      println(" ")
+    }
 
     println("________________________________________________")
+
   }
 
   for (a <- 0 until m) {
-   for (b <- 0 until n) {
+   for (b <- 0 until col) {
      print(BigDecimal(myMatrix(a)(b)).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble + " ")
     //print(myMatrix(a)(b) + " ")
    }
    println("")
   }
 
-}
-object Demo {
-  def main(args: Array[String]) {
-    val pt = new GoldenModel_QR_HouseHolder(5, 5);
-  }
 }
