@@ -1086,10 +1086,15 @@ object FPArithmetic {
     val multiplier = Module(new FP_multiplier(bw)).io
     val adder = Module(new FP_adder(bw)).io
 
+      // latency of 1 cycle - first stage of pipeline
       multiplier.in_a := io.in_a
       multiplier.in_b := io.in_b
+      // need to delay input c by 1 cycle to avoid io.in_c from going to early to the second stage of pipeline
+      val reg_in_c = RegInit(0.U(bw.W))
+      reg_in_c := io.in_c
+      // second stage of pipeline
       adder.in_a := multiplier.out_s
-      adder.in_b := io.in_c
+      adder.in_b := reg_in_c
       io.out_s := adder.out_s
   }
 }
