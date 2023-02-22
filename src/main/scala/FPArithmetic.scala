@@ -1050,8 +1050,6 @@ object FPArithmetic {
     var exponent = 0
     var mantissa = 0
     var limit = scala.BigInt("0", 10)
-    // approximation of the reciprocal using the fast inverse square root trick
-    // however has some limitations for really large numbers
     if (bw == 16) {
       exponent = 5
       mantissa = 10
@@ -1086,9 +1084,6 @@ object FPArithmetic {
     val result = Wire(UInt(bw.W)) // subtract the adjusted input from the magic number and we have the inverse square root immediately (although an approximation)
     result := magic_num - number // the appoximation is obtained immediateley
 
-    val apprx = RegInit(0.U(bw.W))
-    apprx := magic_num - number
-
     val x_n = RegInit(VecInit.fill(NR_iter*4)(0.U(bw.W)))
     val a_2 = RegInit(VecInit.fill(NR_iter*4)(0.U(bw.W)))
     val x_n2 = RegInit(VecInit.fill(NR_iter*4)(0.U(bw.W)))
@@ -1098,16 +1093,6 @@ object FPArithmetic {
     val multipliers = Vector.fill(NR_iter)(Vector.fill(3)(Module(new FP_multiplier(bw)).io))
     val subtractors = Vector.fill(NR_iter)(Module(new FP_subber(bw)).io)
 
-    // consider the equation f(x) = 1/x^2 - a
-    // solving for 0 intercepts suggests => x = 1/sqrt(a)
-    // If we want to solve for an x such that the expression for the zero is satisfied, we consequently solve for 1/sqrt(a)
-    // shout take
-    // f'(x1) = (f(x1)-f(x2))/(x1-x2) = (f(x1)-0)/(x1-x2) => x2 = x1 - (1/x^2 - a)/(-2/x^3) => x2 = x1 + x1/2 - ax^3/2
-    // should be around 1 + 1 + 1 + 1 + 1 = 5 cycles for each iteration of newtons method
-    // we need 3 FP_Mults
-    // 1 FP sub
-    // => x2 = x1(3/2 - (a/2)x1^2) // do these at the same time// then do sub// then 2 mult
-    // then we finally have the apprximation we are after finally mult by in
     for(i <- 0 until NR_iter){
       for(j <- 0 until 4){
         if(j == 0){
