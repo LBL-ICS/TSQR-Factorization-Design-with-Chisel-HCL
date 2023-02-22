@@ -1086,10 +1086,6 @@ object FPArithmetic {
 
     val x_n = RegInit(VecInit.fill(NR_iter*4)(0.U(bw.W)))
     val a_2 = RegInit(VecInit.fill(NR_iter*4)(0.U(bw.W)))
-    val x_n2 = RegInit(VecInit.fill(NR_iter*4)(0.U(bw.W)))
-    val ax2 = RegInit(VecInit.fill(NR_iter*4)(0.U(bw.W)))
-    val subs = RegInit(VecInit.fill(NR_iter*4)(0.U(bw.W)))
-    val x_nexts = RegInit(VecInit.fill(NR_iter)(0.U(bw.W)))
     val multipliers = Vector.fill(NR_iter)(Vector.fill(3)(Module(new FP_multiplier(bw)).io))
     val subtractors = Vector.fill(NR_iter)(Module(new FP_subber(bw)).io)
 
@@ -1127,9 +1123,155 @@ object FPArithmetic {
     val restore_a = Wire(UInt(bw.W))
     restore_a := a_2(NR_iter*4-1)(bw - 1) ## (a_2(NR_iter*4-1)(bw - 2, mantissa) + 1.U) ## a_2(NR_iter*4-1)(mantissa - 1, 0)
     val multiplier4 = Module(new FP_multiplier(bw)) // one cycle
-    multiplier4.io.in_a := a_2(NR_iter*4-1)(bw - 1) ## multipliers(NR_iter-1)(2).out_s(bw - 2, 0)
+    multiplier4.io.in_a := 0.U(1.W) ## multipliers(NR_iter-1)(2).out_s(bw - 2, 0)
     multiplier4.io.in_b := restore_a
     io.out_s := multiplier4.io.out_s(bw - 2, 0) // total 9 cycles
+  }
+
+  class FP_reciprocal_v4(bw: Int, NR_iter: Int) extends Module {
+    require(bw == 16 || bw == 32 || bw == 64 || bw == 128)
+    val io = IO(new Bundle() {
+      val in_a = Input(UInt(bw.W))
+      val out_s = Output(UInt(bw.W))
+    })
+    var magic = scala.BigInt("0", 10)
+    var exponent = 0
+    var mantissa = 0
+    var limit = scala.BigInt("0", 10)
+    if (bw == 16) {
+      exponent = 5
+      mantissa = 10
+      magic = scala.BigInt("23040", 10)
+    } else if (bw == 32) {
+      exponent = 8
+      mantissa = 23
+      magic = scala.BigInt("1597463007", 10)
+    } else if (bw == 64) {
+      exponent = 11
+      mantissa = 52
+      magic = scala.BigInt("6910469410427058089", 10)
+    } else if (bw == 128) {
+      exponent = 15
+      mantissa = 112
+      magic = scala.BigInt("127598099150064121557322682042419249152", 10)
+    }
+    limit = (magic * 2) / 3
+
+    val number = Wire(UInt((bw).W))
+    val threehalfs = Wire(UInt(bw.W))
+    threehalfs := convert_string_to_IEEE_754("1.5", bw).U
+    val two = Wire(UInt(bw.W))
+    two := convert_string_to_IEEE_754("2.0", bw).U
+    when(io.in_a(bw - 2, 0) > (limit * 2).U) {
+      number := limit.U
+    }.otherwise {
+      number := io.in_a(bw - 2, 0) >> 1.U
+    }
+
+    // get the magic number
+    val magic_num = magic.U((bw).W) // we are performing a fast inverse square root. Get the magic number
+
+    val result = Wire(UInt(bw.W)) // subtract the adjusted input from the magic number and we have the inverse square root immediately (although an approximation)
+    result := magic_num - number // the appoximation is obtained immediateley
+
+    val x_n = RegInit(VecInit.fill(NR_iter*4)(0.U(bw.W)))
+    val a_2 = RegInit(VecInit.fill(NR_iter*4)(0.U(bw.W)))
+    val multipliers = Vector.fill(NR_iter)(Vector.fill(3)(Module(new FP_multiplier(bw)).io))
+    val subtractors = Vector.fill(NR_iter)(Module(new FP_subber(bw)).io)
+
+    for(i <- 0 until NR_iter){
+      for(j <- 0 until 4){
+        if(j == 0){
+          if(i == 0) {
+            x_n(i*4) := result
+            a_2(i*4) := io.in_a(bw - 1) ## (io.in_a(bw - 2, mantissa) - 1.U) ## io.in_a(mantissa - 1, 0)
+            multipliers(0)(0).in_a := 0.U(1.W) ## result(bw - 2, 0)
+            multipliers(0)(0).in_b := 0.U(1.W) ## result(bw - 2, 0)
+          }else{
+            x_n(i*4) := multipliers(i-1)(2).out_s
+            a_2(i*4) := a_2(i*4 - 1)
+            multipliers(i)(0).in_a := 0.U(1.W) ## multipliers(i-1)(2).out_s(bw - 2, 0)
+            multipliers(i)(0).in_b := 0.U(1.W) ## multipliers(i-1)(2).out_s(bw - 2, 0)
+          }
+        }else if(j == 1){
+          multipliers(i)(1).in_a := multipliers(i)(0).out_s
+          multipliers(i)(1).in_b := 0.U(1.W) ## a_2(i*4)(bw-2,0)
+          a_2(i*4 + 1) := a_2(i*4)
+          x_n(i*4+1) := x_n(i*4)
+        }else if(j == 2){
+          subtractors(i).in_a := threehalfs
+          subtractors(i).in_b := multipliers(i)(1).out_s
+          a_2(i*4 + 2) := a_2(i*4+1)
+          x_n(i*4+2) := x_n(i*4+1)
+        }else if(j == 3){
+          multipliers(i)(2).in_a := 0.U(1.W) ## x_n(i*4+2)(bw-2,0)
+          multipliers(i)(2).in_b := subtractors(i).out_s
+          a_2(i*4 + 3) := a_2(i*4+2)
+        }
+      }
+    }
+
+    val a_2_isr_to_r = RegInit(0.U(bw.W))
+    a_2_isr_to_r := a_2(NR_iter*4-1)(bw - 1) ## (a_2(NR_iter*4-1)(bw - 2, mantissa) + 1.U) ## a_2(NR_iter*4-1)(mantissa - 1, 0)
+
+    val multiplier4 = Module(new FP_multiplier(bw)) // one cycle
+    multiplier4.io.in_a := 0.U(1.W) ## multipliers(NR_iter-1)(2).out_s(bw - 2, 0)
+    multiplier4.io.in_b := 0.U(1.W) ## multipliers(NR_iter-1)(2).out_s(bw - 2, 0)
+
+    val NR_iter_r = NR_iter + 1
+
+    val x_n_r = RegInit(VecInit.fill(NR_iter_r*3)(0.U(bw.W)))
+    val a_2_r = RegInit(VecInit.fill(NR_iter_r*3)(0.U(bw.W)))
+    val multipliers_r = Vector.fill(NR_iter_r)(Vector.fill(2)(Module(new FP_multiplier(bw)).io))
+    val subtractors_r = Vector.fill(NR_iter_r)(Module(new FP_subber(bw)).io)
+
+    for(i <- 0 until NR_iter_r){
+      for(j <- 0 until 3){
+        if(j == 0){
+          if(i == 0) {
+            x_n_r(i*3) := multiplier4.io.out_s
+            a_2_r(i*3) := a_2_isr_to_r
+            multipliers_r(0)(0).in_a := 0.U(1.W) ## multiplier4.io.out_s(bw-2,0)
+            multipliers_r(0)(0).in_b := 0.U(1.W) ## a_2_isr_to_r(bw-2,0)
+          }else{
+            x_n_r(i*3) := multipliers_r(i-1)(1).out_s
+            a_2_r(i*3) := a_2_r(i*3 - 1)
+            multipliers_r(i)(0).in_a := 0.U(1.W) ## multipliers_r(i-1)(1).out_s(bw - 2, 0)
+            multipliers_r(i)(0).in_b := 0.U(1.W) ## a_2_r(i*3 - 1)(bw - 2, 0)
+          }
+        }else if(j == 1){
+          subtractors_r(i).in_a := two
+          subtractors_r(i).in_b := multipliers_r(i)(0).out_s
+          a_2_r(i*3 + 1) := a_2_r(i*3)
+          x_n_r(i*3+1) := x_n_r(i*3)
+        }else if(j == 2){
+          multipliers_r(i)(1).in_a := 0.U(1.W) ## x_n_r(i*3+1)(bw-2,0)
+          multipliers_r(i)(1).in_b := subtractors_r(i).out_s
+          a_2_r(i*3 + 2) := a_2_r(i*3+1)
+        }
+      }
+    }
+    io.out_s := a_2_r(NR_iter_r*3-1)(bw - 1) ## multipliers_r(NR_iter_r-1)(1).out_s(bw - 2, 0) // total 9 cycles
+
+  }
+
+  class FP_divider_v4(bw:Int, NR_iter: Int) extends Module{
+    val io = IO(new Bundle{
+      val in_a = Input(UInt(bw.W))
+      val in_b = Input(UInt(bw.W))
+      val out_s = Output(UInt(bw.W))
+    })
+    val regs = RegInit(VecInit.fill(NR_iter*7 + 4)(0.U(bw.W)))
+    regs(0) := io.in_a
+    for(i <- 1 until NR_iter*7+4){
+      regs(i) := regs(i-1)
+    }
+    val reciprocal = Module(new FP_reciprocal_v4(bw, NR_iter)).io
+    reciprocal.in_a := io.in_b
+    val multiplier = Module(new FP_multiplier(bw)).io
+    multiplier.in_a := regs(NR_iter*7+3)
+    multiplier.in_b := reciprocal.out_s
+    io.out_s := multiplier.out_s
   }
 
   def main(args:Array[String]):Unit = {
@@ -1140,9 +1282,9 @@ object FPArithmetic {
       println(s"Divider Output: ${convert_long_to_float(c.io.out_s.peek().litValue, 32)}")
     }
     println("The new square root circuit")
-    test(new FP_square_root_v4(32,25)){c=>
-      c.io.in_a.poke(convert_string_to_IEEE_754("87482.0", 32).U)
-      for(i <- 0 until 101){
+    test(new FP_square_root_v4(32,5)){c=>
+      c.io.in_a.poke(convert_string_to_IEEE_754("1546548752121.0", 32).U)
+      for(i <- 0 until 21){
         c.clock.step()
         println(s"clock cycle: ${i+1}")
         println(s"Divider Output: ${convert_long_to_float(c.io.out_s.peek().litValue, 32)}")
@@ -1150,8 +1292,46 @@ object FPArithmetic {
     }
     println("The old square root circuit")
     test(new FP_square_root_v3(32)){c=>
-      c.io.in_a.poke(convert_string_to_IEEE_754("87482.0", 32).U)
+      c.io.in_a.poke(convert_string_to_IEEE_754("1546548752121.0", 32).U)
       for(i <- 0 until 13){
+        c.clock.step()
+        println(s"clock cycle: ${i+1}")
+        println(s"Divider Output: ${convert_long_to_float(c.io.out_s.peek().litValue, 32)}")
+      }
+    }
+    println("The new reciprocal circuit")
+    test(new FP_reciprocal_v4(32,1)){c=>
+      c.io.in_a.poke(convert_string_to_IEEE_754("2.5456", 32).U)
+      for(i <- 0 until 11){
+        c.clock.step()
+        println(s"clock cycle: ${i+1}")
+        println(s"Divider Output: ${convert_long_to_float(c.io.out_s.peek().litValue, 32)}")
+      }
+    }
+    println("The old reciprocal circuit")
+    test(new FP_reciprocal_v3(32)){c=>
+      c.io.in_a.poke(convert_string_to_IEEE_754("2.5456", 32).U)
+      for(i <- 0 until 13){
+        c.clock.step()
+        println(s"clock cycle: ${i+1}")
+        println(s"Divider Output: ${convert_long_to_float(c.io.out_s.peek().litValue, 32)}")
+      }
+    }
+    println("The new divider circuit")
+    test(new FP_divider_v4(32,1)){c=>
+      c.io.in_a.poke(convert_string_to_IEEE_754("-121234.60", 32).U)
+      c.io.in_b.poke(convert_string_to_IEEE_754("-2254.5456", 32).U)
+      for(i <- 0 until 12){
+        c.clock.step()
+        println(s"clock cycle: ${i+1}")
+        println(s"Divider Output: ${convert_long_to_float(c.io.out_s.peek().litValue, 32)}")
+      }
+    }
+    println("The new divider circuit")
+    test(new FP_divider_v3(32)){c=>
+      c.io.in_a.poke(convert_string_to_IEEE_754("-121234.60", 32).U)
+      c.io.in_b.poke(convert_string_to_IEEE_754("-2254.5456", 32).U)
+      for(i <- 0 until 12){
         c.clock.step()
         println(s"clock cycle: ${i+1}")
         println(s"Divider Output: ${convert_long_to_float(c.io.out_s.peek().litValue, 32)}")
