@@ -12231,7 +12231,7 @@ end // initial
 `endif
 `endif // SYNTHESIS
 endmodule
-module hh_core(
+module tsqr_mc(
   input          clock,
   input          reset,
   input          io_clk,
