@@ -10,5 +10,5 @@ lazy val root = (project in file("."))
     libraryDependencies += "edu.berkeley.cs" %% "chisel3" % "3.5.0",
       // We also recommend using chiseltest for writing unit tests
       libraryDependencies += "edu.berkeley.cs" %% "chiseltest" % "0.5.0" % "test",
-    name := "Padding-3D-FFT-Chisel-HCL"
+    name := "TSQR-Chisel-HCL"
   )

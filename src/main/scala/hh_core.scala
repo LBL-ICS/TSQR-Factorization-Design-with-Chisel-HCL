@@ -11,17 +11,35 @@ import FP_Modules.FloatingPointDesigns._
 import chisel3._
 import chisel3.util._
 import Chisel.{log2Ceil, log2Floor}
+import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
+//import chisel3.stage.ChiselGeneratorAnnotation
 import chiseltest.RawTester.test
 import chisel3.tester._
+import firrtl.AnnotationSeq
+import firrtl.options.TargetDirAnnotation
+
+
 import java.io.PrintWriter
 import scala.collection.mutable
 
-object Main{
-  def main(args: Array[String]) : Unit = {
-    val sw2 = new PrintWriter("hh_core_16_chisel_test_v2.v")
-    sw2.println(getVerilogString(new hh_core_chisel.hh_core(17,32, 16, 16)))
-    sw2.close()
-  }
+//object Main{
+//  def main(args: Array[String]) : Unit = {
+//    val sw2 = new PrintWriter("hh_core.v")
+//    sw2.println(getVerilogString(new hh_core_chisel.hh_core(17,32, 16, 16)))
+//    sw2.close()
+//  }
+
+object Main extends App {
+    // Define the annotation sequence with the necessary Chisel annotations
+    val annos: AnnotationSeq = Seq(
+        ChiselGeneratorAnnotation(() => new hh_core_chisel.hh_core(1, 32, 16, 16)),
+    )
+
+    // Execute the stage with annotations and additional FIRRTL options as arguments
+    (new ChiselStage).execute(
+        Array("-X", "sverilog", "--target-dir", "verification/dut"),
+        annos
+    )
 }
 
 object hh_core_chisel{
@@ -294,4 +312,6 @@ object hh_core_chisel{
 
  
 }
+
+case class FirtoolOption(str: String)
 
