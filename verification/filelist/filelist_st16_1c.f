@@ -1,4 +1,4 @@
 ../dut/define.v
 ../tb/tsqr_mc_st16_tb.sv
 ../dut/tsqr_st16_1c.sv
-
+../dut/simple_dual.sv

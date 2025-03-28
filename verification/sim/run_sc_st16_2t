@@ -46,8 +46,6 @@ add wave -position insertpoint sim:/tsqr_mc_st16_tb/u_tsqr_mc/fsms_0/*
 add wave -position insertpoint sim:/tsqr_mc_st16_tb/u_tsqr_mc/hh_core/*
 add wave -position insertpoint sim:/tsqr_mc_st16_tb/u_tsqr_mc/hh_core/u_hh_datapath/*
 
-add wave -position insertpoint sim:/tsqr_mc_st16_tb/u_tsqr_mc/hh_core/u_hh_datapath/hh_datapath_1/FP_DDOT_dp/*
-add wave -position insertpoint sim:/tsqr_mc_st16_tb/u_tsqr_mc/hh_core/u_hh_datapath/hh_datapath_1/axpy_dp/*
 #run 2 us                                                                            
 run 2000 us                                                                            
 

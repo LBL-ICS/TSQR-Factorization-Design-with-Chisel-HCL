@@ -715,12 +715,12 @@ wire                        mem1_fi_c_127 ;
 `endif //ONETWENTYEIGHT_CORE_INT 
 wire                        tsqr_fi    ; 
 reg  [`MEM_NO-1:0]          dma_mem_ena  ;
-reg  [`RAM_WIDTH/4-1:0]     dma_mem_wea  ;
+reg  [`RAM_WEA_WIDTH-1:0]     dma_mem_wea  ;
 reg  [`RAM_ADDR_WIDTH-1:0]  dma_mem_addra;
-reg  [`RAM_WIDTH*2-1:0]       dma_mem_dina ;
+reg  [`RAM_WIDTH-1:0]       dma_mem_dina ;
 reg  [`MEM_NO-1:0]          dma_mem_enb  ;
 reg  [`RAM_ADDR_WIDTH-1:0]  dma_mem_addrb;
-wire [`RAM_WIDTH*2-1:0]       dma_mem_doutb;
+wire [`RAM_WIDTH-1:0]       dma_mem_doutb;
 
 //---------------------------------------------------------
 //--- golden model and input file 
@@ -736,9 +736,8 @@ $display("=== The maxix factoriation Starts! (%d ns) ====", $time);
 `ifdef SINGLE_CORE
   `ifdef ST16_RANDOM_TEST_16X8
      $display("Initilize The Memory in ST16_RANDOM_TEST_16X8 (%d ns) in Single-core Design",$time);
-    // $readmemh("/home/taylorb8409/Desktop/TSQR_Chisel_BRAM_IP/golden/single_core/sc_st16_random_test_16x8_mat/dmx_ieee754.txt" , dmx_ram);
-    $readmemh("/home/taylorb8409/Desktop/TSQR_Chisel_BRAM_IP_Complex/golden/single_core/sc_st16_random_test_16x8_mat/16x8_complex.txt" , dmx_ram);
-     $readmemh("/home/taylorb8409/Desktop/TSQR_Chisel_BRAM_IP_Complex/golden/single_core/sc_st16_random_test_16x8_mat/tri_ieee754.txt" , tri_ram);
+    $readmemh("../golden/single_core/sc_st16_random_test_16x8_mat/16x8_complex.txt" , dmx_ram);
+     $readmemh("../golden/single_core/sc_st16_random_test_16x8_mat/tri_ieee754.txt" , tri_ram);
      //$readmemh("../golden/single_core/sc_st16_random_test_16x8/dmx_ieee754.txt" , dmx_ram);
      //$readmemh("../golden/single_core/sc_st16_random_test_16x8/tri_ieee754.txt" , tri_ram);
   `elsif ST16_RANDOM_TEST_24X8
@@ -749,9 +748,6 @@ $display("=== The maxix factoriation Starts! (%d ns) ====", $time);
      $display("Initilize The Memory in ST16_RANDOM_TEST_32X8 (%d ns) in Single-core Design",$time);
      $readmemh("/home/taylorb8409/Desktop/TSQR_Chisel_BRAM_IP_Complex/golden/single_core/sc_st16_random_test_16x8_mat/16x8_complex.txt" , dmx_ram);
      $readmemh("/home/taylorb8409/Desktop/TSQR_Chisel_BRAM_IP_Complex/golden/single_core/sc_st16_random_test_16x8_mat/tri_ieee754.txt" , tri_ram);
-     
-     //$readmemh("/home/taylorb8409/Desktop/TSQR_Chisel_BRAM_IP/golden/single_core/sc_st16_random_test_32x8/dmx_ieee754.txt" , dmx_ram);
-     //$readmemh("/home/taylorb8409/Desktop/TSQR_Chisel_BRAM_IP/golden/single_core/sc_st16_random_test_32x8/tri_ieee754.txt" , tri_ram);
      
        `elsif ST16_RANDOM_TEST_64X8
      $display("Initilize The Memory in ST16_RANDOM_TEST_32X8 (%d ns) in Single-core Design",$time);
@@ -854,8 +850,8 @@ end
 //---------------------------------------------------------
 //--- Instantiation 
 //---------------------------------------------------------
-tsqr_mc u_tsqr_mc (.clk          (clk          ),
-                   .rst          (rst          ),
+tsqr_mc u_tsqr_mc (.clk        (clk          ),
+                   .rst        (rst          ),
 	           .tsqr_en      (tsqr_en      ),
 	           .tile_no      (tile_no      ),
                    .dma_mem_ena  (dma_mem_ena  ),
@@ -1142,29 +1138,29 @@ tsqr_mc u_tsqr_mc (.clk          (clk          ),
 //---------------------------------------------------------------------
 //------- BFM
 //---------------------------------------------------------------------
-wire [31:0] re_1 = dma_mem_doutb[511-0*32:512-1*32];
-wire [31:0] im_1 = dma_mem_doutb[511-1*32:512-2*32];
-
-wire [31:0] re_2 = dma_mem_doutb[511-2*32:512-3*32];
-wire [31:0] im_2 = dma_mem_doutb[511-3*32:512-4*32];
-
-wire [31:0] re_3 = dma_mem_doutb[511-4*32:512-5*32];
-wire [31:0] im_3 = dma_mem_doutb[511-5*32:512-6*32];
-
-wire [31:0] re_4 = dma_mem_doutb[511-6*32:512-7*32];
-wire [31:0] im_4 = dma_mem_doutb[511-7*32:512-8*32];
-
-wire [31:0] re_5 = dma_mem_doutb[511-8*32:512-9*32];
-wire [31:0] im_5 = dma_mem_doutb[511-9*32:512-10*32];
-
-wire [31:0] re_6 = dma_mem_doutb[511-10*32:512-11*32];
-wire [31:0] im_6 = dma_mem_doutb[511-11*32:512-12*32];
-
-wire [31:0] re_7 = dma_mem_doutb[511-12*32:512-13*32];
-wire [31:0] im_7 = dma_mem_doutb[511-13*32:512-14*32];
-
-wire [31:0] re_8 = dma_mem_doutb[511-14*32:512-15*32];
-wire [31:0] im_8 = dma_mem_doutb[511-15*32:512-16*32];
+//wire [31:0] re_1 = dma_mem_doutb[`RAM_WIDTH-0*32-1 :`RAM_WIDTH-1*32];
+//wire [31:0] im_1 = dma_mem_doutb[`RAM_WIDTH-1*32-1 :`RAM_WIDTH-2*32];
+//
+//wire [31:0] re_2 = dma_mem_doutb[`RAM_WIDTH-2*32-1 :`RAM_WIDTH-3*32];
+//wire [31:0] im_2 = dma_mem_doutb[`RAM_WIDTH-3*32-1 :`RAM_WIDTH-4*32];
+//
+//wire [31:0] re_3 = dma_mem_doutb[`RAM_WIDTH-4*32-1 :`RAM_WIDTH-5*32];
+//wire [31:0] im_3 = dma_mem_doutb[`RAM_WIDTH-5*32-1 :`RAM_WIDTH-6*32];
+//
+//wire [31:0] re_4 = dma_mem_doutb[`RAM_WIDTH-6*32-1 :`RAM_WIDTH-7*32];
+//wire [31:0] im_4 = dma_mem_doutb[`RAM_WIDTH-7*32-1 :`RAM_WIDTH-8*32];
+//
+//wire [31:0] re_5 = dma_mem_doutb[`RAM_WIDTH-8*32-1 :`RAM_WIDTH-9*32];
+//wire [31:0] im_5 = dma_mem_doutb[`RAM_WIDTH-9*32-1 :`RAM_WIDTH-10*32];
+//
+//wire [31:0] re_6 = dma_mem_doutb[`RAM_WIDTH-10*32-1:`RAM_WIDTH-11*32];
+//wire [31:0] im_6 = dma_mem_doutb[`RAM_WIDTH-11*32-1:`RAM_WIDTH-12*32];
+//
+//wire [31:0] re_7 = dma_mem_doutb[`RAM_WIDTH-12*32-1:`RAM_WIDTH-13*32];
+//wire [31:0] im_7 = dma_mem_doutb[`RAM_WIDTH-13*32-1:`RAM_WIDTH-14*32];
+//
+//wire [31:0] re_8 = dma_mem_doutb[`RAM_WIDTH-14*32-1:`RAM_WIDTH-15*32];
+//wire [31:0] im_8 = dma_mem_doutb[`RAM_WIDTH-15*32-1:`RAM_WIDTH-16*32];
 
 
 
@@ -1474,7 +1470,7 @@ initial begin
     @(negedge clk);
 
     if(wr_fi) begin 
-      $display("=== The %d maxix factoriation is completed! (%d ns) ====", u_tsqr_mc.fsms_0_mx_cnt, $time);
+      //$display("=== The %d maxix factoriation is completed! (%d ns) ====", u_tsqr_mc.fsms_0_mx_cnt, $time);
 
       // ********************************
       // ---------- open report ---------
@@ -1654,7 +1650,7 @@ initial begin
       // ********************************
       // ---------- write report --------
       // ********************************
-   /*   for(col_index=0; col_index<`MATRIX_WIDTH;) begin
+      for(col_index=0; col_index<`MATRIX_WIDTH;) begin
         golden_column=tri_ram[col_index];
         dut_column   =u_tsqr_mc.hh_core.simple_dual_2.ram[col_index];
         `include "error_percent_abs_cal_tri.sv"
@@ -1662,7 +1658,6 @@ initial begin
         `include "comp_tri_ieee754.sv"
         col_index=col_index+1;
       end
-      */
 
       // ********************************
       // ---------- close report --------
